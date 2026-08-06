@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waiting Room — Intake Assistant</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#24302C;
+  --muted:#5B6B65;
+  --bg:#EEF3F1;
+  --panel:#FFFFFF;
+  --teal-deep:#1F3B38;
+  --teal:#3E8E7E;
+  --teal-soft:#DCEBE7;
+  --paper:#FBF6EA;
+  --paper-line:#E4D9BE;
+  --warn:#B5432B;
+  --warn-soft:#F6E4DE;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:transparent;color:var(--ink);font-family:'Inter',sans-serif;}
+#app{max-width:640px;margin:0 auto;padding:28px 20px 30px;}
+
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:600;margin:0 0 6px;}
+h1,h2,h3{font-family:'Source Serif 4',serif;color:var(--teal-deep);margin:0 0 8px;line-height:1.2;}
+h1{font-size:28px;font-weight:700;}
+h2{font-size:21px;font-weight:600;}
+p{line-height:1.55;color:var(--ink);margin:0 0 14px;}
+.muted{color:var(--muted);font-size:14px;}
+
+.disclaimer{
+  background:var(--warn-soft);
+  border:1px solid #E3B7A7;
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:13px;
+  color:#7A3520;
+  margin-bottom:22px;
+  line-height:1.5;
+}
+.disclaimer b{color:#5E2515;}
+
+.card{
+  background:var(--panel);
+  border-radius:var(--radius);
+  padding:24px;
+  box-shadow:0 1px 2px rgba(31,59,56,0.06), 0 8px 24px rgba(31,59,56,0.05);
+  margin-bottom:18px;
+}
+
+label{display:block;font-size:13px;font-weight:600;color:var(--teal-deep);margin:16px 0 6px;}
+label:first-of-type{margin-top:0;}
+input[type=text], input[type=number], textarea, select{
+  width:100%;
+  border:1.5px solid #CFE0DB;
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  color:var(--ink);
+  background:#FCFEFE;
+}
+textarea{resize:vertical;min-height:70px;}
+input:focus, textarea:focus, select:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+
+button.primary{
+  background:var(--teal-deep);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:13px 20px;
+  font-size:14.5px;
+  font-weight:600;
+  cursor:pointer;
+  width:100%;
+  font-family:'Inter',sans-serif;
+  margin-top:6px;
+  transition:background .15s;
+}
+button.primary:hover{background:#16302D;}
+button.primary:disabled{background:#A9BDB8;cursor:not-allowed;}
+button.ghost{
+  background:transparent;
+  color:var(--teal-deep);
+  border:1.5px solid #CFE0DB;
+  border-radius:10px;
+  padding:11px 18px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  width:100%;
+  margin-top:8px;
+}
+
+/* Ticket stub */
+.ticket{
+  position:relative;
+  background:var(--teal-deep);
+  color:#EAF3F1;
+  border-radius:14px;
+  padding:22px 22px 26px;
+  text-align:center;
+  overflow:visible;
+  margin-bottom:18px;
+}
+.ticket .eyebrow{color:#9FD8CB;}
+.ticket .token{
+  font-family:'Source Serif 4',serif;
+  font-size:56px;
+  font-weight:700;
+  margin:2px 0 4px;
+  letter-spacing:.02em;
+}
+.ticket .name{font-size:14px;color:#CFE7E1;}
+.perforation{
+  position:absolute;
+  left:0;right:0;bottom:-1px;
+  height:0;
+  border-bottom:2px dashed #4E736E;
+}
+.perforation::before, .perforation::after{
+  content:'';
+  position:absolute;
+  bottom:-9px;
+  width:18px;height:18px;
+  background:var(--bg);
+  border-radius:50%;
+}
+.perforation::before{left:-9px;}
+.perforation::after{right:-9px;}
+
+.status-row{display:flex;justify-content:space-between;gap:12px;margin-top:14px;}
+.status-box{flex:1;background:var(--teal-soft);border-radius:10px;padding:12px;text-align:center;}
+.status-box .num{font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;color:var(--teal-deep);}
+.status-box .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);font-weight:600;margin-top:2px;}
+
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);margin-right:6px;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%{opacity:1;}50%{opacity:.3;}100%{opacity:1;}}
+
+/* Chat */
+.chat-log{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.bubble{max-width:82%;padding:11px 14px;border-radius:14px;font-size:14.5px;line-height:1.5;}
+.bubble.assistant{background:var(--panel);border:1px solid #E1EAE7;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(31,59,56,0.05);}
+.bubble.user{background:var(--teal-deep);color:#EAF3F1;align-self:flex-end;border-bottom-right-radius:4px;}
+.bubble.urgent{background:var(--warn-soft);border:1.5px solid var(--warn);color:#5E2515;align-self:flex-start;}
+.typing{display:flex;gap:4px;align-self:flex-start;padding:12px 14px;}
+.typing span{width:6px;height:6px;border-radius:50%;background:#9FBDB6;animation:bounce 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.15s;}
+.typing span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
+
+.chat-input-row{display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);padding-top:6px;}
+.chat-input-row input{flex:1;}
+.chat-input-row button{
+  background:var(--teal-deep);color:#fff;border:none;border-radius:10px;
+  padding:0 18px;font-weight:600;cursor:pointer;font-size:14px;
+}
+.chat-input-row button:disabled{background:#A9BDB8;cursor:not-allowed;}
+
+/* Note / summary */
+.paper{
+  background:var(--paper);
+  border:1px solid var(--paper-line);
+  border-radius:10px;
+  padding:26px;
+  font-family:'Source Serif 4',serif;
+}
+.paper .head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--teal-deep);padding-bottom:12px;margin-bottom:16px;}
+.paper .head h2{margin:0;}
+.paper .head .date{font-family:'Inter',sans-serif;font-size:12px;color:var(--muted);}
+.paper section{margin-bottom:16px;}
+.paper h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin-bottom:6px;font-family:'Inter',sans-serif;font-weight:700;}
+.paper ul{margin:0;padding-left:18px;}
+.paper li{margin-bottom:5px;font-family:'Inter',sans-serif;font-size:14.5px;line-height:1.5;}
+.paper p.body-serif{font-size:15.5px;line-height:1.6;}
+
+.emergency{
+  background:#FDF1EC;
+  border:2px solid var(--warn);
+  border-radius:var(--radius);
+  padding:24px;
+  text-align:center;
+}
+.emergency h2{color:var(--warn);}
+.emergency .big{font-size:40px;margin-bottom:6px;}
+
+.footer-note{text-align:center;font-size:12px;color:var(--muted);margin-top:24px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  const app = document.getElementById('app');
+
+  // ---- Client-side safety net: matched regardless of what the model says ----
+  const EMERGENCY_PATTERNS = [
+    /chest pain|chest pressure|tight(ness)? in (my|the) chest/i,
+    /can'?t breathe|cannot breathe|trouble breathing|severe (shortness of breath|breathlessness)|gasping/i,
+    /uncontroll(ed|able) bleed|bleeding (a lot|heavily|won'?t stop)/i,
+    /sudden confusion|can'?t wake (him|her|them|up)|unresponsive|unconscious|fainted|passed out/i,
+    /face (is )?droop|slurred speech|one side (of (my|the) )?(body|face) (is )?weak|worst headache of my life/i,
+    /seizure|convulsion/i,
+    /anaphylax|throat (is )?closing|severe allergic reaction/i,
+    /suicid|kill myself|end my life|want to die|harm(ing)? myself|hurt myself/i,
+    /overdose|took too many (pills|tablets)/i,
+  ];
+  function scanForEmergency(text){
+    return EMERGENCY_PATTERNS.some(p => p.test(text));
+  }
+
+  // Extra guard on anything the model produces: strip dosage-looking numbers just in case.
+  function sanitizeClinicalText(text){
+    if (!text) return text;
+    return text.replace(/\b\d+(\.\d+)?\s?(mg|mcg|ml|g|milligrams?|micrograms?)\b/gi, '[dose per product label]');
+  }
+
+  let state = {
+    screen: 'welcome', // welcome -> waiting -> intake -> summary  (emergency can override intake at any time)
+    name:'', age:'', complaint:'',
+    token:null, serving:0, ahead:0,
+    pollTimer:null,
+    messages: [],      // {role:'assistant'|'user', text, urgent?:bool}
+    apiHistory: [],     // full history sent to the model: {role:'user'|'assistant', content:'...'}
+    busy:false,
+    emergencyTriggered:false,
+    finalSummary:null,
+  };
+
+  async function safeGet(key, shared){
+    try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }catch(e){ return null; }
+  }
+  async function safeSet(key, value, shared){
+    try{ await window.storage.set(key, value, shared); }catch(e){}
+  }
+
+  async function claimToken(){
+    let counter = parseInt((await safeGet('clinic:counter', true)) || '0', 10);
+    counter += 1;
+    await safeSet('clinic:counter', String(counter), true);
+    let serving = parseInt((await safeGet('clinic:serving', true)) || '0', 10);
+    if (serving === 0){ await safeSet('clinic:serving', '1', true); serving = 1; }
+    return {token: counter, serving};
+  }
+  async function refreshServing(){
+    let serving = parseInt((await safeGet('clinic:serving', true)) || '1', 10);
+    state.serving = serving;
+    state.ahead = Math.max(0, state.token - serving);
+    return serving;
+  }
+  async function advanceServingIfDue(){
+    let last = parseInt((await safeGet('clinic:last_advance', true)) || '0', 10);
+    const now = Date.now();
+    if (now - last > 10000){
+      let serving = parseInt((await safeGet('clinic:serving', true)) || '1', 10);
+      if (serving < state.token){
+        serving += 1;
+        await safeSet('clinic:serving', String(serving), true);
+        await safeSet('clinic:last_advance', String(now), true);
+      }
+    }
+  }
+
+  function el(html){ const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function render(){
+    app.innerHTML = '';
+    if (state.screen === 'welcome') app.appendChild(renderWelcome());
+    else if (state.screen === 'waiting') app.appendChild(renderWaiting());
+    else if (state.screen === 'intake') app.appendChild(renderChat());
+    else if (state.screen === 'summary') app.appendChild(renderSummary());
+  }
+
+  // ---------- WELCOME ----------
+  function renderWelcome(){
+    const wrap = el(`
+      <div>
+        <p class="eyebrow">Intake Assistant</p>
+        <h1>Let's get you checked in</h1>
+        <p class="muted">Once you're in, I'll talk through what's going on with you directly — like an intake conversation, not a form.</p>
+        <div class="disclaimer"><b>Not a real clinic.</b> This is a general self-care guide, not a diagnosis or a real prescription, and it doesn't replace an actual doctor, nurse, or pharmacist. If this could be an emergency, contact local emergency services right away.</div>
+        <div class="card">
+          <label>Your name</label>
+          <input type="text" id="f-name" placeholder="e.g. Priya Sharma"/>
+          <label>Age (optional)</label>
+          <input type="number" id="f-age" placeholder="e.g. 32" min="0" max="120"/>
+          <label>What brings you in today?</label>
+          <textarea id="f-complaint" placeholder="e.g. Sore throat and mild fever since yesterday"></textarea>
+          <button class="primary" id="join-btn">Join the queue</button>
+        </div>
+      </div>
+    `);
+    wrap.querySelector('#join-btn').addEventListener('click', async () => {
+      const name = wrap.querySelector('#f-name').value.trim();
+      const complaint = wrap.querySelector('#f-complaint').value.trim();
+      const age = wrap.querySelector('#f-age').value.trim();
+      if (!complaint){ wrap.querySelector('#f-complaint').style.borderColor = 'var(--warn)'; return; }
+      state.name = name || 'Patient';
+      state.complaint = complaint;
+      state.age = age;
+      const btn = wrap.querySelector('#join-btn');
+      btn.disabled = true; btn.textContent = 'Getting your ticket…';
+      const {token, serving} = await claimToken();
+      state.token = token; state.serving = serving;
+      state.ahead = Math.max(0, token - serving);
+
+      if (scanForEmergency(complaint)){
+        // Fast path: don't even wait in line for something described as an emergency.
+        state.screen = 'intake';
+        state.emergencyTriggered = true;
+        render();
+        return;
+      }
+
+      state.screen = 'waiting';
+      render();
+    });
+    return wrap;
+  }
+
+  // ---------- WAITING ----------
+  function renderWaiting(){
+    const wrap = el(`
+      <div>
+        <p class="eyebrow">Waiting Room</p>
+        <h1>You're in line</h1>
+        <div class="ticket">
+          <p class="eyebrow">Your ticket</p>
+          <div class="token">#${state.token}</div>
+          <div class="name">${escapeHtml(state.name)}</div>
+          <div class="perforation"></div>
+        </div>
+        <div class="status-row">
+          <div class="status-box"><div class="num">#${state.serving}</div><div class="lbl">Now serving</div></div>
+          <div class="status-box"><div class="num">${state.ahead}</div><div class="lbl">Ahead of you</div></div>
+        </div>
+        <p class="muted" id="wait-msg" style="margin-top:14px;text-align:center;"><span class="pulse"></span>Waiting for your turn — this updates automatically.</p>
+        <button class="primary" id="skip-btn" style="display:none;margin-top:20px;">Begin consultation</button>
+      </div>
+    `);
+    function checkTurn(){
+      if (state.ahead <= 0){
+        wrap.querySelector('#wait-msg').innerHTML = "It's your turn.";
+        const btn = wrap.querySelector('#skip-btn');
+        btn.style.display = 'block';
+        btn.onclick = () => { clearInterval(state.pollTimer); state.screen = 'intake'; render(); };
+      }
+    }
+    checkTurn();
+    state.pollTimer = setInterval(async () => {
+      await advanceServingIfDue();
+      await refreshServing();
+      wrap.querySelector('.status-row').innerHTML = `
+        <div class="status-box"><div class="num">#${state.serving}</div><div class="lbl">Now serving</div></div>
+        <div class="status-box"><div class="num">${state.ahead}</div><div class="lbl">Ahead of you</div></div>`;
+      checkTurn();
+    }, 3000);
+    return wrap;
+  }
+
+  // ---------- SYSTEM PROMPT for the live consultation ----------
+  const SYSTEM_PROMPT = `You are an intake assistant conducting a calm, warm, doctor-style conversation with a patient. This is general self-care guidance software, not a real clinician, and everyone using it already knows that.
+
+Hard rules, no exceptions:
+1. Ask ONE clear, natural follow-up question at a time (chief complaint detail, duration, severity, associated symptoms, relevant history, medications/allergies) — like a real intake conversation, not a checklist read aloud.
+2. If the patient describes anything suggesting a medical emergency (chest pain, severe trouble breathing, uncontrolled bleeding, sudden confusion/fainting, stroke signs like face drooping or slurred speech, seizure, anaphylaxis, suicidal thoughts, overdose, "worst headache of my life"), immediately stop the normal flow. Set "state" to "emergency", briefly and calmly say why this needs emergency care now, and tell them to contact local emergency services or go to the nearest emergency department right away. Do not continue gathering routine history once this triggers.
+3. NEVER name a specific medication with a personalized dose (e.g. never say "take 500mg of X"). You may reference general over-the-counter categories (e.g. "a general fever reducer, taken per the package label") but never prescribe a specific drug and dose as if writing a prescription.
+4. NEVER state a definitive diagnosis. You may describe what a pattern of symptoms commonly reflects, using cautious language ("this can be consistent with...", "this sounds like it could be..."), always paired with encouragement to get an in-person exam for anything uncertain.
+5. Keep each message short: 1-3 sentences, plus at most one question, warm and professional in tone.
+6. After you have enough information (typically 4-7 exchanges covering duration, severity, associated symptoms, and relevant history/allergies) OR if the patient says they're done, set "state" to "summary" and fill the "summary" object completely.
+
+You must respond with ONLY valid JSON, no markdown fences, no preamble, matching exactly this schema:
+{"reply": "<the message to show the patient>", "state": "questioning" | "emergency" | "summary", "summary": null | {"chief_complaint": "...", "duration": "...", "severity_impression": "...", "category": "...", "associated_symptoms": ["..."], "self_care": ["... general, non-personalized-dose suggestions ..."], "see_doctor_if": ["..."]}}
+
+Set "summary" to null unless state is "summary".`;
+
+  async function callModel(){
+    const body = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system: SYSTEM_PROMPT,
+      messages: state.apiHistory,
+    };
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    const raw = (data.content || []).map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  }
+
+  // ---------- CHAT / INTAKE ----------
+  function renderChat(){
+    const wrap = el(`
+      <div>
+        <p class="eyebrow">Consultation · Ticket #${state.token || '—'}</p>
+        <h1>Let's talk it through</h1>
+        <div class="disclaimer"><b>Not a real diagnosis or prescription.</b> General guidance only — this can't examine you or write real medication orders.</div>
+        <div class="chat-log" id="chat-log"></div>
+        <div class="chat-input-row" id="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Type your answer…"/>
+          <button id="chat-send">Send</button>
+        </div>
+      </div>
+    `);
+    const log = wrap.querySelector('#chat-log');
+    const input = wrap.querySelector('#chat-input');
+    const sendBtn = wrap.querySelector('#chat-send');
+
+    function paintLog(){
+      log.innerHTML = '';
+      state.messages.forEach(m => {
+        const cls = m.role === 'user' ? 'user' : (m.urgent ? 'assistant urgent' : 'assistant');
+        log.appendChild(el(`<div class="bubble ${cls}">${escapeHtml(m.text)}</div>`));
+      });
+      if (state.busy){
+        log.appendChild(el(`<div class="typing"><span></span><span></span><span></span></div>`));
+      }
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function lockInput(locked){
+      input.disabled = locked; sendBtn.disabled = locked;
+    }
+
+    async function pushAssistant(text, urgent){
+      state.messages.push({role:'assistant', text, urgent: !!urgent});
+      paintLog();
+    }
+
+    async function handleTurn(userText){
+      if (userText != null){
+        state.messages.push({role:'user', text: userText});
+        state.apiHistory.push({role:'user', content: userText});
+        paintLog();
+      }
+
+      // Client-side safety net fires before we even ask the model.
+      if (userText && scanForEmergency(userText)){
+        lockInput(true);
+        await pushAssistant("What you're describing needs emergency attention right now — please contact your local emergency number or get to the nearest emergency department immediately. If you're with someone, ask them to stay with you or take you in.", true);
+        return;
+      }
+
+      state.busy = true; paintLog();
+      try{
+        const result = await callModel();
+        state.busy = false;
+        const safeReply = sanitizeClinicalText(result.reply || '');
+        if (result.state === 'emergency'){
+          await pushAssistant(safeReply, true);
+          await pushAssistant("Please contact your local emergency number or go to the nearest emergency department now — don't wait this one out at home.", true);
+          lockInput(true);
+        } else if (result.state === 'summary' && result.summary){
+          await pushAssistant(safeReply || "Here's your visit summary.");
+          state.finalSummary = sanitizeSummary(result.summary);
+          setTimeout(() => { state.screen = 'summary'; render(); }, 700);
+        } else {
+          await pushAssistant(safeReply);
+          if (result.summary){ state.finalSummary = sanitizeSummary(result.summary); }
+        }
+      }catch(e){
+        state.busy = false;
+        await pushAssistant("Sorry — I had trouble processing that. Could you try rephrasing?");
+      }
+    }
+
+    function sanitizeSummary(s){
+      const clean = Object.assign({}, s);
+      if (Array.isArray(clean.self_care)) clean.self_care = clean.self_care.map(sanitizeClinicalText);
+      if (Array.isArray(clean.see_doctor_if)) clean.see_doctor_if = clean.see_doctor_if.map(sanitizeClinicalText);
+      if (clean.chief_complaint) clean.chief_complaint = sanitizeClinicalText(clean.chief_complaint);
+      if (clean.severity_impression) clean.severity_impression = sanitizeClinicalText(clean.severity_impression);
+      return clean;
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const val = input.value.trim();
+      if (!val || state.busy) return;
+      input.value = '';
+      handleTurn(val);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){ e.preventDefault(); sendBtn.click(); }
+    });
+
+    paintLog();
+
+    // Kick off the conversation on first render of this screen.
+    if (state.messages.length === 0){
+      if (state.emergencyTriggered || scanForEmergency(state.complaint)){
+        lockInput(true);
+        pushAssistant(`Thanks, ${state.name}. What you described — "${state.complaint}" — sounds like it could be a medical emergency.`, true);
+        pushAssistant("Please contact your local emergency number or go to the nearest emergency department right away. This isn't something to work through here.", true);
+      } else {
+        const opener = `Hi ${state.name}, I'm looking at what you shared: "${state.complaint}". Let's talk through it a bit — how long has this been going on?`;
+        state.apiHistory.push({role:'user', content: `Patient name: ${state.name}. Age: ${state.age || 'not given'}. Chief complaint: ${state.complaint}. Please greet them briefly by name and ask your first follow-up question about this complaint.`});
+        handleTurn(null).then(() => {});
+        // handleTurn(null) will call the model since we already pushed history; but we still want an immediate visible opener.
+        // To keep it simple and fast, show a local opener bubble now, and let the model's first real reply follow.
+        state.messages.unshift({role:'assistant', text: `Hi ${state.name}, thanks for waiting.`});
+        paintLog();
+      }
+    }
+
+    return wrap;
+  }
+
+  // ---------- SUMMARY ----------
+  function renderSummary(){
+    const s = state.finalSummary || {};
+    const dateStr = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+    const assoc = Array.isArray(s.associated_symptoms) ? s.associated_symptoms : [];
+    const tips = Array.isArray(s.self_care) && s.self_care.length ? s.self_care : ['Rest, stay hydrated, and monitor how you feel over the next day or two.'];
+    const seeDoctor = Array.isArray(s.see_doctor_if) && s.see_doctor_if.length ? s.see_doctor_if : ['Symptoms last more than a few days without improving', 'Symptoms get noticeably worse instead of better'];
+
+    const wrap = el(`
+      <div>
+        <p class="eyebrow">Visit Complete</p>
+        <h1>Your visit summary</h1>
+        <div class="disclaimer"><b>This is not a medical diagnosis or a prescription.</b> It's general self-care information based on what you described. A real clinician can examine you, order tests, and prescribe medication safely — this tool can't.</div>
+        <div class="paper">
+          <div class="head">
+            <h2>Visit Summary &amp; Self-Care Note</h2>
+            <div class="date">${dateStr} · Ticket #${state.token}</div>
+          </div>
+          <section>
+            <h3>Patient</h3>
+            <p class="body-serif">${escapeHtml(state.name)}${state.age ? ', age ' + escapeHtml(state.age) : ''}</p>
+          </section>
+          <section>
+            <h3>Reported</h3>
+            <p class="body-serif">${escapeHtml(s.chief_complaint || state.complaint)}${s.duration ? ' — ongoing for ' + escapeHtml(s.duration) : ''}.${s.severity_impression ? ' ' + escapeHtml(s.severity_impression) : ''}</p>
+            ${assoc.length ? `<p class="body-serif">Also noted: ${assoc.map(escapeHtml).join(', ')}.</p>` : ''}
+          </section>
+          <section>
+            <h3>Treatment suggestions</h3>
+            <ul>${tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+          </section>
+          <section>
+            <h3>See a real clinician if</h3>
+            <ul>${seeDoctor.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+          </section>
+        </div>
+        <p class="footer-note">No medication names, doses, or diagnoses are given here on purpose — a licensed clinician or pharmacist is the safe source for that. If anything changes for the worse, don't wait: get seen in person.</p>
+        <button class="ghost" id="restart-btn" style="margin-top:16px;">Start a new visit</button>
+      </div>
+    `);
+    wrap.querySelector('#restart-btn').addEventListener('click', () => {
+      state = Object.assign(state, {screen:'welcome', name:'', complaint:'', age:'', token:null, messages:[], apiHistory:[], busy:false, emergencyTriggered:false, finalSummary:null});
+      render();
+    });
+    return wrap;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
